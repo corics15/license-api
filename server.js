@@ -4,6 +4,7 @@ const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
 const app = express();
 const PORT = 3000;
+const { createClient } = require('@supabase/supabase-js');
 
 app.use(cors());
 app.use(express.json());
@@ -19,6 +20,12 @@ db.serialize(() => {
     )
   `);
 });
+
+// Supabase client
+const supabase = createClient(
+  'https://efshqfhgxlaaogibtufh.supabase.co',           // Replace with your Supabase URL
+  process.env.SUPABASE_SERVICE_ROLE                 // Replace with your Supabase service role key (store in env var in prod!)
+);
 
 // Activate license
 app.post('/activate', (req, res) => {
@@ -61,6 +68,34 @@ app.get('/status/:deviceId', (req, res) => {
       res.json({ licensed: !!row });
     }
   );
+});
+
+// check license with supabase
+app.get('/check', async (req, res) => {
+  const deviceId = req.query.deviceId;
+
+  if (!deviceId) {
+    return res.status(400).json({ error: 'Missing deviceId' });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('license_keys')
+      .select('key')
+      .eq('used_by', deviceId)
+      .eq('is_used', true)
+      .maybeSingle();
+
+    if (error) {
+      console.error(error);
+      return res.status(500).json({ error: 'Database error' });
+    }
+
+    res.json({ licensed: !!data });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal error' });
+  }
 });
 
 app.listen(PORT, () => {
