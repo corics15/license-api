@@ -1,5 +1,5 @@
 // server.js
-import express, { json } from 'express';
+const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 import cors from 'cors';
 const app = express();
