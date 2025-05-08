@@ -71,8 +71,8 @@ app.get('/check', async (req, res) => {
   try {
     const response = await fetch('https://efshqfhgxlaaogibtufh.supabase.co/rest/v1/license_keys?select=key&used_by=eq.' + deviceId + '&is_used=eq.true', {
       headers: {
-        apikey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmc2hxZmhneGxhYW9naWJ0dWZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY2NjU2NjksImV4cCI6MjA2MjI0MTY2OX0.AyLdRc4rDrsVIUAGQI5KQ1AxluDDV2MlvMMWa0CUDT0',
-        Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmc2hxZmhneGxhYW9naWJ0dWZoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NjY2NTY2OSwiZXhwIjoyMDYyMjQxNjY5fQ.Y9DO13oXw1BFK8KhkkMY7sDYW8RfjZUxywztNCXXDFM'
+        apikey: process.env.SUPABASE_API_KEY,
+        Authorization: 'Bearer ${process.env.SUPABASE_BEARER_TOKEN}'
       }
     });
 
