@@ -1,12 +1,12 @@
 // server.js
-const express = require('express');
+import express, { json } from 'express';
 const sqlite3 = require('sqlite3').verbose();
-const cors = require('cors');
+import cors from 'cors';
 const app = express();
 const PORT = 3000;
 
 app.use(cors());
-app.use(express.json());
+app.use(json());
 
 // Set up SQLite DB
 const db = new sqlite3.Database('./licenses.db');
@@ -61,6 +61,37 @@ app.get('/status/:deviceId', (req, res) => {
       res.json({ licensed: !!row });
     }
   );
+});
+
+app.get('/check', async (req, res) => {
+  const deviceId = req.query.deviceId;
+
+  if (!deviceId) {
+    return res.status(400).json({ error: 'Missing deviceId' });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('license_keys')
+      .select('key')
+      .eq('used_by', deviceId)
+      .eq('is_used', true)
+      .maybeSingle();
+
+    if (error) {
+      console.error(error);
+      return res.status(500).json({ error: 'Database error' });
+    }
+
+    if (data) {
+      return res.json({ licensed: true });
+    } else {
+      return res.json({ licensed: false });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal error' });
+  }
 });
 
 app.listen(PORT, () => {
