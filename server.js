@@ -1,15 +1,18 @@
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
+const sqlite3 = require('sqlite3').verbose();
 const fetch = require('node-fetch');
+const { json } = require('body-parser');
+const { createClient } = require('@supabase/supabase-js');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(json());
 
-// SQLite setup
+// Setup SQLite DB
 const db = new sqlite3.Database('./licenses.db');
 
 db.serialize(() => {
@@ -21,7 +24,17 @@ db.serialize(() => {
   `);
 });
 
-// Activate license
+// Supabase client
+const supabase = createClient(
+  'https://efshqfhgxlaaogibtufh.supabase.co',      // Replace with your Supabase URL
+  process.env.SUPABASE_SERVICE_ROLE                // Replace with your Supabase service role key (store in env var in prod!)
+);
+
+// -----------------------------
+// ROUTES
+// -----------------------------
+
+// 🔐 Activate license
 app.post('/activate', (req, res) => {
   const { key, deviceId } = req.body;
   db.run(
@@ -47,7 +60,7 @@ app.post('/validate', (req, res) => {
   );
 });
 
-// Check license by device ID (SQLite-based)
+// Check license by device ID (SQLite)
 app.get('/status/:deviceId', (req, res) => {
   const { deviceId } = req.params;
   db.get(
@@ -60,7 +73,7 @@ app.get('/status/:deviceId', (req, res) => {
   );
 });
 
-// Supabase-powered check (optional advanced endpoint)
+// Check license using Supabase
 app.get('/check', async (req, res) => {
   const deviceId = req.query.deviceId;
 
@@ -69,23 +82,28 @@ app.get('/check', async (req, res) => {
   }
 
   try {
-    const response = await fetch('https://efshqfhgxlaaogibtufh.supabase.co/rest/v1/license_keys?select=key&used_by=eq.' + deviceId + '&is_used=eq.true', {
-      headers: {
-        apikey: process.env.SUPABASE_API_KEY,
-        Authorization: 'Bearer ${process.env.SUPABASE_BEARER_TOKEN}'
-      }
-    });
+    const { data, error } = await supabase
+      .from('license_keys')
+      .select('key')
+      .eq('used_by', deviceId)
+      .eq('is_used', true)
+      .maybeSingle();
 
-    const data = await response.json();
-    const licensed = Array.isArray(data) && data.length > 0;
+    if (error) {
+      console.error(error);
+      return res.status(500).json({ error: 'Database error' });
+    }
 
-    res.json({ licensed });
+    res.json({ licensed: !!data });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal error' });
   }
 });
 
+// -----------------------------
+// Start server
+// -----------------------------
 app.listen(PORT, () => {
   console.log(`License API running on http://localhost:${PORT}`);
 });
