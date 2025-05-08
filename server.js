@@ -1,14 +1,15 @@
-// server.js
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
-import cors from 'cors';
+const cors = require('cors');
+const fetch = require('node-fetch');
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
+// Middleware
 app.use(cors());
-app.use(json());
+app.use(express.json());
 
-// Set up SQLite DB
+// SQLite setup
 const db = new sqlite3.Database('./licenses.db');
 
 db.serialize(() => {
@@ -41,16 +42,12 @@ app.post('/validate', (req, res) => {
     [key, deviceId],
     (err, row) => {
       if (err) return res.status(500).json({ error: err.message });
-      if (row) {
-        res.json({ valid: true });
-      } else {
-        res.json({ valid: false });
-      }
+      res.json({ valid: !!row });
     }
   );
 });
 
-// Check license by device ID
+// Check license by device ID (SQLite-based)
 app.get('/status/:deviceId', (req, res) => {
   const { deviceId } = req.params;
   db.get(
@@ -63,6 +60,7 @@ app.get('/status/:deviceId', (req, res) => {
   );
 });
 
+// Supabase-powered check (optional advanced endpoint)
 app.get('/check', async (req, res) => {
   const deviceId = req.query.deviceId;
 
@@ -71,26 +69,20 @@ app.get('/check', async (req, res) => {
   }
 
   try {
-    const { data, error } = await supabase
-      .from('license_keys')
-      .select('key')
-      .eq('used_by', deviceId)
-      .eq('is_used', true)
-      .maybeSingle();
+    const response = await fetch('https://efshqfhgxlaaogibtufh.supabase.co/rest/v1/license_keys?select=key&used_by=eq.' + deviceId + '&is_used=eq.true', {
+      headers: {
+        apikey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmc2hxZmhneGxhYW9naWJ0dWZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY2NjU2NjksImV4cCI6MjA2MjI0MTY2OX0.AyLdRc4rDrsVIUAGQI5KQ1AxluDDV2MlvMMWa0CUDT0',
+        Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmc2hxZmhneGxhYW9naWJ0dWZoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NjY2NTY2OSwiZXhwIjoyMDYyMjQxNjY5fQ.Y9DO13oXw1BFK8KhkkMY7sDYW8RfjZUxywztNCXXDFM'
+      }
+    });
 
-    if (error) {
-      console.error(error);
-      return res.status(500).json({ error: 'Database error' });
-    }
+    const data = await response.json();
+    const licensed = Array.isArray(data) && data.length > 0;
 
-    if (data) {
-      return res.json({ licensed: true });
-    } else {
-      return res.json({ licensed: false });
-    }
+    res.json({ licensed });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Internal error' });
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
