@@ -23,8 +23,8 @@ db.serialize(() => {
 
 // Supabase client
 const supabase = createClient(
-  'https://efshqfhgxlaaogibtufh.supabase.co',           // Replace with your Supabase URL
-  process.env.SUPABASE_SERVICE_ROLE                 // Replace with your Supabase service role key (store in env var in prod!)
+  'https://efshqfhgxlaaogibtufh.supabase.co',
+  process.env.SUPABASE_SERVICE_ROLE
 );
 
 // Activate license
@@ -83,8 +83,8 @@ app.get('/check', async (req, res) => {
       .from('license_keys')
       .select('key')
       .eq('used_by', deviceId)
-      .eq('is_used', true)
-      .maybeSingle();
+      .eq('is_used', true).limit(1);
+      // .maybeSingle();
 
     if (error) {
       console.error(error);
