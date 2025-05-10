@@ -83,18 +83,18 @@ app.get('/check', async (req, res) => {
       .from('license_keys')
       .select('key')
       .eq('used_by', deviceId)
-      .eq('is_used', false).limit(1);
+      .eq('is_used', true).limit(1);
       // .maybeSingle();
 
     if (error) {
       console.error(error);
-      return res.status(500).json({ error: 'Database error' });
+      return res.status(500).json({ error: error });
     }
 
     res.json({ licensed: !!data });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Internal error' });
+    res.status(500).json({ error: err });
   }
 });
 
