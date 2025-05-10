@@ -81,9 +81,10 @@ app.get('/check', async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('license_keys')
-      .select('key')
+      .select('*', {count: 'exact',head:true})
       .eq('used_by', deviceId)
-      .eq('is_used', true).limit(1);
+      .eq('is_used', true);
+      // .limit(1);
       // .maybeSingle();
 
     if (error) {
