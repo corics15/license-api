@@ -92,7 +92,7 @@ app.get('/check', async (req, res) => {
       return res.status(500).json({ error: error });
     }
 
-    res.json({ licensed: !!data });
+    res.json({ licensed: count > 0 });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err });
