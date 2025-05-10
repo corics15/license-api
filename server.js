@@ -89,13 +89,13 @@ app.get('/check', async (req, res) => {
 
     if (error) {
       console.error(error);
-      return res.status(500).json({ error: error });
+      return res.status(500).json({ error: error.message });
     }
 
     res.json({ licensed: count > 0 });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: err });
+    res.status(500).json({ error: err.message });
   }
 });
 
