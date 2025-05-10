@@ -83,7 +83,7 @@ app.get('/check', async (req, res) => {
       .from('license_keys')
       .select('key')
       .eq('used_by', deviceId)
-      .eq('is_used', true).limit(1);
+      .eq('is_used', false).limit(1);
       // .maybeSingle();
 
     if (error) {
