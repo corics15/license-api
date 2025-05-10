@@ -79,7 +79,7 @@ app.get('/check', async (req, res) => {
   }
 
   try {
-    const { data, error } = await supabase
+    const { count, error } = await supabase
       .from('license_keys')
       .select('*', {count: 'exact',head:true})
       .eq('used_by', deviceId)
